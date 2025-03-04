@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>FO2 Gold Calculator</title>
+        <style>
+            body {
+                background-color: #333333;
+                color: white;
+                font-size: 18px;
+                font-family: Arial, sans-serif;
+            }
+            h1 {
+                text-align: center;
+            }
+            .player-stats {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                grid-gap: 20px;
+                max-width: 600px;
+                margin: 0 auto;
+            }
+            label {
+                display: block;
+                margin-bottom: 5px;
+            }
+            input {
+                width: 100%;
+                padding: 8px;
+                background-color: #444;
+                border: 1px solid #666;
+                border-radius: 5px;
+                color: white;
+                font-size: 16px;
+            }
+            .clear {
+                clear: both;
+            }
+            .buttonWrapper{
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding-top: 10px;
+            }
+            .response{
+                text-align: center;
+                display: grid;
+            }
+            table {
+                 width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px; /* Optional spacing for the table */
+                text-align: center;
+            }
+
+        </style>
+    </head>
+    <body>
+        <h1>FO2 Calculator Thing I guess</h1>
+        <div class="player-stats">
+            <div>
+                <label for="Player Level">Player Level:</label>
+                <input type="text" id="Player Level" name="Player Level">
+            </div>
+            <div>
+                <label for="Player HP">Player HP:</label>
+                <input type="text" id="Player HP" name="Player HP">
+            </div>
+            <div>
+                <label for="Armor">Armor:</label>
+                <input type="text" id="Armor" name="Armor">
+            </div>
+            <div>
+                <label for="HP Regen">HP Regen:</label>
+                <input type="text" id="HP Regen" name="HP Regen">
+            </div>
+            <div>
+                <label for="LowestDmg">Lowest Damage:</label>
+                <input type="text" id="LowestDmg" name="LowestDmg">
+            </div>
+            <div>
+                <label for="HighestDmg">Highest Damage:</label>
+                <input type="text" id="HighestDmg" name="HighestDmg">
+            </div>
+            <div>
+                <label for="AttackSpd">Attack Speed:</label>
+                <input type="text" id="AttackSpd" name="AttackSpd">
+            </div>
+            <div>
+                <label for="Crit">Crit:</label>
+                <input type="text" id="Crit" name="Crit">
+            </div>
+            <div>
+                <label for="Dodge">Dodge:</label>
+                <input type="text" id="Dodge" name="Dodge">
+            </div>
+        </div>
+        <div class="buttonWrapper">
+            <button type="button" style="width:25%" onClick="calculatesStuff()">Calculate!</button>
+        </div>
+        <div id="response">
+        </div>
+        <script src="./main.js"></script>
+    </body>
+</html>
+
