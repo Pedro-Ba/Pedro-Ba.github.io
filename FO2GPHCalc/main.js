@@ -19,10 +19,61 @@ let BOSSLIST = [
     "Devilish Star",
     "Flying Dutchman",
     "The Kraken",
-    "Troglodyte Scourge"
+    "Troglodyte Scourge",
+    "Froctopus",
+    "Chat",
+    "Cat",
+    "Wild Turkey",
+    "Alrahur",
+    "The Future",
+    "Elder of the Dead",
+    "Lord of the Dead"
 ];
+//Elder and Lord are not actually bosses but they are not farmable due to low amount.
 
 const bosslistLowerCase = BOSSLIST.map(name => name.toLowerCase());
+
+function binomialCoefficient(n, k) {
+    if (k > n) return 0;
+    let res = 1;
+    for (let i = 0; i < k; i++) {
+        res *= (n - i);
+        res /= (i + 1);
+    }
+    return res;
+}
+
+function binomialProbability(events, range, prob) {
+    const complement = 1 - prob;
+    const coefficient = binomialCoefficient(range, events);
+    return coefficient * Math.pow(prob, events) * Math.pow(complement, range - events);
+}
+
+function ProbabilityAtLeastNinK(events, range, prob){
+    let sum = 0;
+    for(let numEvents = events; numEvents <= range; numEvents++){
+        sum = sum + binomialProbability(numEvents, range, prob);
+    }
+    return sum;
+}
+
+function CalculateActualProbabilities(HPK, prob){ 
+    let arrayOfProbabilities = [];
+    let range = Math.ceil(HPK/2);
+    let events = Math.floor(HPK/2);
+    for(events; events > 0; events--, range++){        
+        arrayOfProbabilities.push(ProbabilityAtLeastNinK(events, range, prob));
+    }
+    arrayOfProbabilities.push(binomialProbability(events, range-1, prob));
+    let realProbabilities = [];
+    realProbabilities.push(arrayOfProbabilities[0]);
+    for(let i = 1; i < arrayOfProbabilities.length - 1; i++){
+        realProbabilities.push(arrayOfProbabilities[i] - arrayOfProbabilities[i-1]);
+    }
+    realProbabilities.push(arrayOfProbabilities[arrayOfProbabilities.length-1]);
+    return realProbabilities;
+}
+
 
 async function populateMobs(){
     const files = ['a.json', 'b.json', 'c.json'];
@@ -51,8 +102,7 @@ async function calculatesStuff(){
     const attackSpd = parseFloat(document.getElementById('AttackSpd').value);
     const crit = parseFloat(document.getElementById('Crit').value)/100;
     const dodge = parseFloat(document.getElementById('Dodge').value)/100;
-    const naiveDmgPerHit = (lowestDmg + highestDmg)/2;
-    const actualDmgPerHit = naiveDmgPerHit + naiveDmgPerHit * crit;
+    const avgDmgPerHit = (lowestDmg + highestDmg)/2;
     console.log('Player Level:', playerLevel);
     console.log('Player HP:', playerHP);
     console.log('Armor:', armor);
@@ -72,13 +122,30 @@ async function calculatesStuff(){
     for (mob of allMobs){
         let estimatedClicks = 0;
         //calculate mob gold
+        
         let name = mob['name'].toLowerCase();
         if(name.includes('chest') || name.includes('vein') || name.includes('crate') || bosslistLowerCase.includes(name)){
             continue;
         }
-        let hitsPerKill = Math.ceil(mob['health']/actualDmgPerHit); //basically, the hits needed is like my old ttk, but instead of DamagePerSecond I utilize the value of each hit.
-        let mobTTK = Math.max((hitsPerKill - 1) * attackSpd, 1.5); //new mob TTK is dependant on the dmg speed of your hits. -1 because first attack is always free (autoattack reset);
-        //Utilize math.max 0.2 because if mob dies instantly (0 TTK) it'd say infinite gold, which is simply untrue. Assuming you can loot and kill 5 things a second this is fine... probably unrealistic.
+        let locations = mob['locations'];
+        if (locations[0]?.area?.id == 13 || locations[0]?.area?.id == 9){
+            continue;
+        }
+
+        console.log(`Calculating for ${mob['name']}`);
+        let baseHitsPerKill = Math.ceil(mob['health']/avgDmgPerHit); 
+        let actualHPK = 0;
+		if(baseHitsPerKill < 500){
+			let arrayOfProbs = CalculateActualProbabilities(baseHitsPerKill, crit);
+			for(let probCalcHelper = Math.ceil(baseHitsPerKill/2), i = 0; probCalcHelper <= baseHitsPerKill; probCalcHelper++, i++){
+				actualHPK += arrayOfProbs[i] * probCalcHelper; //I think it's this?
+			}
+		}
+		else{
+			actualHPK = baseHitsPerKill;
+		}        
+        console.log(actualHPK);
+        let mobTTK = Math.max((actualHPK - 1) * attackSpd, 1.5); //new mob TTK is dependant on the dmg speed of your hits. -1 because first attack is always free (autoattack reset);
         let mobsPerHour = timingWindow/mobTTK; //unchanged? Might still need Math.Ceil to compensate for overkilling?;
         estimatedClicks = 3 * mobsPerHour; //2 clicks to attack each mob, 1 to loot it
         let rawGoldKillPerHour = ((mob['goldMin'] + mob['goldMax'])/2) * mobsPerHour;
@@ -96,7 +163,7 @@ async function calculatesStuff(){
         //calculate mob dmg
         let mobDmgAvg = (mob['dmgMin'] + mob['dmgMax']) / 2;
         let mobDmgTaken = (mobDmgAvg * ((200 + playerLevel*50) / ((200 + playerLevel*50)+armor))) * (1-dodge); 
-        let mobDmgPerKill = mobDmgTaken * (hitsPerKill - 1);
+        let mobDmgPerKill = mobDmgTaken * (actualHPK - 1);
         let effectiveDmgTakenPerKill = mobDmgPerKill - hpRegen;
         let mobsUntilPlayerDies;
         if(effectiveDmgTakenPerKill <= 0){
@@ -104,11 +171,10 @@ async function calculatesStuff(){
         }
         else{
             mobsUntilPlayerDies = playerHP/effectiveDmgTakenPerKill;
-            mobsUntilPlayerDies = mobsUntilPlayerDies.toFixed(2);
         }
 
         //push all info to array
-        mobAndGold.push({"name": mob['name'], "GPH": totalGoldPerHour.toFixed(2), "TTK": mobTTK.toFixed(2), "HPK": hitsPerKill, "MobDPK": mobDmgPerKill.toFixed(2), "Mobs until death": mobsUntilPlayerDies, "Clicks per Hour": estimatedClicks.toFixed(2)});
+        mobAndGold.push({"name": mob['name'], "GPH": totalGoldPerHour.toFixed(2), "TTK": mobTTK.toFixed(2), "HPK": actualHPK, "MobDPK": mobDmgPerKill, "Mobs until death": mobsUntilPlayerDies, "Clicks per Hour": estimatedClicks});
     }
     let sortedMobAndGold = mobAndGold.sort((a, b) => b.GPH - a.GPH);
     for (sortedItem of sortedMobAndGold){
