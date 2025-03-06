@@ -135,15 +135,15 @@ async function calculatesStuff(){
         console.log(`Calculating for ${mob['name']}`);
         let baseHitsPerKill = Math.ceil(mob['health']/avgDmgPerHit); 
         let actualHPK = 0;
-		if(baseHitsPerKill < 500){
-			let arrayOfProbs = CalculateActualProbabilities(baseHitsPerKill, crit);
-			for(let probCalcHelper = Math.ceil(baseHitsPerKill/2), i = 0; probCalcHelper <= baseHitsPerKill; probCalcHelper++, i++){
-				actualHPK += arrayOfProbs[i] * probCalcHelper; //I think it's this?
-			}
-		}
-		else{
-			actualHPK = baseHitsPerKill;
-		}        
+        if(baseHitsPerKill < 500){
+            let arrayOfProbs = CalculateActualProbabilities(baseHitsPerKill, crit);
+            for(let probCalcHelper = Math.ceil(baseHitsPerKill/2), i = 0; probCalcHelper <= baseHitsPerKill; probCalcHelper++, i++){
+                actualHPK += arrayOfProbs[i] * probCalcHelper; //I think it's this?
+            }
+        }
+        else{
+            actualHPK = baseHitsPerKill;
+        }        
         console.log(actualHPK);
         let mobTTK = Math.max((actualHPK - 1) * attackSpd, 1.5); //new mob TTK is dependant on the dmg speed of your hits. -1 because first attack is always free (autoattack reset);
         let mobsPerHour = timingWindow/mobTTK; //unchanged? Might still need Math.Ceil to compensate for overkilling?;
@@ -170,11 +170,11 @@ async function calculatesStuff(){
             mobsUntilPlayerDies = "Can't die to this";
         }
         else{
-            mobsUntilPlayerDies = playerHP/effectiveDmgTakenPerKill;
+            mobsUntilPlayerDies = (playerHP/effectiveDmgTakenPerKill).toFixed(2);
         }
 
         //push all info to array
-        mobAndGold.push({"name": mob['name'], "GPH": totalGoldPerHour.toFixed(2), "TTK": mobTTK.toFixed(2), "HPK": actualHPK, "MobDPK": mobDmgPerKill, "Mobs until death": mobsUntilPlayerDies, "Clicks per Hour": estimatedClicks});
+        mobAndGold.push({"name": mob['name'], "GPH": totalGoldPerHour.toFixed(2), "TTK": mobTTK.toFixed(2), "HPK": actualHPK.toFixed(2), "MobDPK": mobDmgPerKill.toFixed(2), "Mobs until death": mobsUntilPlayerDies, "Clicks per Hour": estimatedClicks.toFixed(2)});
     }
     let sortedMobAndGold = mobAndGold.sort((a, b) => b.GPH - a.GPH);
     for (sortedItem of sortedMobAndGold){
