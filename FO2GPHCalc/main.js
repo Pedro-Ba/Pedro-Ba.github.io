@@ -27,9 +27,18 @@ let BOSSLIST = [
     "Alrahur",
     "The Future",
     "Elder of the Dead",
-    "Lord of the Dead"
+    "Lord of the Dead",
+    "Rotten Overlord",
+    "Evil Pie",
+    "Taunted Throne",
+    "Gen. Biodegradable",
+    "Sea Snake",
+    "Grave",
+    "Tombstone"
 ];
+//I really need to make this a tiny bit better. Grave and Tombstone ain't even bosses, these are fucking veins. Isn't there a "only hurtable by Pickaxe" variable? Fucks sake.
 //Elder and Lord are not actually bosses but they are not farmable due to low amount.
+let allMobs = [];
 
 const bosslistLowerCase = BOSSLIST.map(name => name.toLowerCase());
 
@@ -76,10 +85,10 @@ function CalculateActualProbabilities(HPK, prob){
 
 
 async function populateMobs(){
-    const files = ['a.json', 'b.json', 'c.json'];
+    const files = ['./allMobsAndItemStacksize.json'];
     let allMobs = [];
     const fetchPromises = files.map(file => 
-        fetch(`./mobs/${file}`)
+        fetch(`${file}`)
             .then(response => response.json())
             .then(data => {
                 allMobs = allMobs.concat(data);
@@ -112,8 +121,9 @@ async function calculatesStuff(){
     console.log('Attack Speed:', attackSpd);
     console.log('Crit:', crit);
     console.log('Dodge:', dodge);
-
-    let allMobs = await populateMobs();
+;
+    if (allMobs.length == 0) allMobs = await populateMobs();
+    
     console.log(allMobs); //we have all mobs.
 
     let mobAndGold = [];
@@ -132,7 +142,7 @@ async function calculatesStuff(){
             continue;
         }
 
-        console.log(`Calculating for ${mob['name']}`);
+        //console.log(`Calculating for ${mob['name']}`);
         let baseHitsPerKill = Math.ceil(mob['health']/avgDmgPerHit); 
         let actualHPK = 0;
         if(baseHitsPerKill < 500){
@@ -144,7 +154,8 @@ async function calculatesStuff(){
         else{
             actualHPK = baseHitsPerKill;
         }        
-        console.log(actualHPK);
+        //console.log(actualHPK);
+        let totalItemSlotsNeeded = 0;
         let mobTTK = Math.max((actualHPK - 1) * attackSpd, 1.5); //new mob TTK is dependant on the dmg speed of your hits. -1 because first attack is always free (autoattack reset);
         let mobsPerHour = timingWindow/mobTTK; //unchanged? Might still need Math.Ceil to compensate for overkilling?;
         estimatedClicks = 3 * mobsPerHour; //2 clicks to attack each mob, 1 to loot it
@@ -154,6 +165,7 @@ async function calculatesStuff(){
             let dropRate = drop['dropRate']/100;
             let price = drop['item']['sellPrice'];
             let totalItemsPerHour = mobsPerHour * dropRate * drop['count']; //just add count, I mean, if it can drop 3 times... right?
+            totalItemSlotsNeeded += totalItemsPerHour/drop['item']['stacksize'];
             let totalItemValue = totalItemsPerHour * price;
             goldFromDrops += totalItemValue;
             estimatedClicks += 1 * dropRate * drop['count'];
@@ -174,19 +186,28 @@ async function calculatesStuff(){
         }
 
         //push all info to array
-        mobAndGold.push({"name": mob['name'], "GPH": totalGoldPerHour.toFixed(2), "TTK": mobTTK.toFixed(2), "HPK": actualHPK.toFixed(2), "MobDPK": mobDmgPerKill.toFixed(2), "Mobs until death": mobsUntilPlayerDies, "Clicks per Hour": estimatedClicks.toFixed(2)});
+        mobAndGold.push({
+            "name": mob['name'], 
+            "GPH": totalGoldPerHour.toFixed(2), 
+            "TTK": mobTTK.toFixed(2), 
+            "HPK": actualHPK.toFixed(2), 
+            "MobDPK": mobDmgPerKill.toFixed(2), 
+            "Mobs until death": mobsUntilPlayerDies, 
+            "Clicks per Hour": estimatedClicks.toFixed(2),
+            "Item Slots Needed": totalItemSlotsNeeded.toFixed(2)
+        });
     }
     let sortedMobAndGold = mobAndGold.sort((a, b) => b.GPH - a.GPH);
-    for (sortedItem of sortedMobAndGold){
-        console.log(sortedItem);
-    }
+//  for (sortedItem of sortedMobAndGold){
+//      console.log(sortedItem);
+//  }
     const resultDiv = document.getElementById('response');
     resultDiv.innerHTML = '';
     const table = document.createElement('table');
     table.classList.add('mob-table');
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
-    const headers = ['Name', 'Gold Per Hour', 'Time To Kill(sec)', 'Hits Per Kill', 'Mob Damage Per Kill', 'Mobs until Death', 'Clicks per Hour']
+    const headers = ['Name', 'Gold Per Hour', 'Time To Kill(sec)', 'Hits Per Kill', 'Mob Damage Per Kill', 'Mobs until Death', 'Clicks per Hour', 'Item Slots Needed']
     headers.forEach(header => {
         const th = document.createElement('th');
         th.textContent = header;
@@ -225,6 +246,10 @@ async function calculatesStuff(){
         const clicksPerHourCell = document.createElement('td');
         clicksPerHourCell.textContent = sortedItem['Clicks per Hour'];
         row.appendChild(clicksPerHourCell);
+
+        const itemSlotsNeededCell = document.createElement('td');
+        itemSlotsNeededCell.textContent = sortedItem['Item Slots Needed'];
+        row.appendChild(itemSlotsNeededCell);
 
         tbody.appendChild(row);
     });
