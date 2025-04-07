@@ -36,6 +36,21 @@ let BOSSLIST = [
     "Grave",
     "Tombstone"
 ];
+
+const factionColors = {
+  "Neutral": "rgb(255, 255, 255)",
+  "New World Order": "rgb(100, 100, 100)",
+  "Crab Crusaders": "rgb(156, 61, 52)",
+  "Skele Assassins": "rgb(156, 149, 154)",
+  "Miner Collective": "rgb(248, 219, 27)",
+  "Obsidian Brotherhood": "rgb(180, 130, 81)",
+  "Legion of the Dead": "rgb(61, 15, 141)",
+  "Martian Marauders": "rgb(0, 246, 1)",
+  "Forest Fellowship": "rgb(57, 83, 45)",
+  "Glacier Union": "rgb(106, 185, 227)",
+  "Echoes of the Deep": "rgb(172, 212, 193)",
+  "Lost Vanguard": "rgb(103, 88, 52)"
+};
 //I really need to make this a tiny bit better. Grave and Tombstone ain't even bosses, these are fucking veins. Isn't there a "only hurtable by Pickaxe" variable? Fucks sake.
 //Elder and Lord are not actually bosses but they are not farmable due to low amount.
 let allMobs = [];
@@ -112,23 +127,24 @@ async function calculatesStuff(){
     const crit = parseFloat(document.getElementById('Crit').value)/100;
     const dodge = parseFloat(document.getElementById('Dodge').value)/100;
     const avgDmgPerHit = (lowestDmg + highestDmg)/2;
-    console.log('Player Level:', playerLevel);
-    console.log('Player HP:', playerHP);
-    console.log('Armor:', armor);
-    console.log('HP Regen:', hpRegen);
-    console.log('Lowest Damage:', lowestDmg);
-    console.log('Highest Damage:', highestDmg);
-    console.log('Attack Speed:', attackSpd);
-    console.log('Crit:', crit);
-    console.log('Dodge:', dodge);
+//  console.log('Player Level:', playerLevel);
+//  console.log('Player HP:', playerHP);
+//  console.log('Armor:', armor);
+//  console.log('HP Regen:', hpRegen);
+//  console.log('Lowest Damage:', lowestDmg);
+//  console.log('Highest Damage:', highestDmg);
+//  console.log('Attack Speed:', attackSpd);
+//  console.log('Crit:', crit);
+//  console.log('Dodge:', dodge);
 ;
     if (allMobs.length == 0) allMobs = await populateMobs();
     
-    console.log(allMobs); //we have all mobs.
+    //console.log(allMobs); //we have all mobs.
 
     let mobAndGold = [];
     //each object of array contains id, name, desc?, HEALTH OBV, level, goldMax, goldMin, atkSpeed, dmgMin, dmgMax, some other worthless stuff; then the important part, numSpawns, spawnTimeSec, DROPS.
-    const timingWindow = 3600;
+    const timingWindow = 3600; //Effectively the total time, in seconds. 3600 seconds is just 1 hour.
+
     for (mob of allMobs){
         let estimatedClicks = 0;
         //calculate mob gold
@@ -171,6 +187,7 @@ async function calculatesStuff(){
             estimatedClicks += 1 * dropRate * drop['count'];
         }
         let totalGoldPerHour = rawGoldKillPerHour + goldFromDrops;
+        let factionXPHour = mobsPerHour * mob['factionXp'];
         //console.log(`${mob['name']} TTK: ${mobTTK}. Total mobs killed per hour: ${timingWindow/mobTTK}. Gold per hour, no items: ${rawGoldKillPerHour}. Gold just from items: ${goldFromDrops}. Total Gold per Hour: ${totalGoldPerHour}`);
         //calculate mob dmg
         let mobDmgAvg = (mob['dmgMin'] + mob['dmgMax']) / 2;
@@ -187,14 +204,17 @@ async function calculatesStuff(){
 
         //push all info to array
         mobAndGold.push({
-            "name": mob['name'], 
+            "lvl": `Lv.  ${mob['level']}`,
+            "name": mob['name'],
             "GPH": totalGoldPerHour.toFixed(2), 
             "TTK": mobTTK.toFixed(2), 
             "HPK": actualHPK.toFixed(2), 
             "MobDPK": mobDmgPerKill.toFixed(2), 
             "Mobs until death": mobsUntilPlayerDies, 
             "Clicks per Hour": estimatedClicks.toFixed(2),
-            "Item Slots Needed": totalItemSlotsNeeded.toFixed(2)
+            "Item Slots Needed": totalItemSlotsNeeded.toFixed(2),
+            "Faction": mob['faction']['name'],
+            "Faction XP/Hr": factionXPHour.toFixed(2)
         });
     }
     let sortedMobAndGold = mobAndGold.sort((a, b) => b.GPH - a.GPH);
@@ -207,7 +227,7 @@ async function calculatesStuff(){
     table.classList.add('mob-table');
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
-    const headers = ['Name', 'Gold Per Hour', 'Time To Kill(sec)', 'Hits Per Kill', 'Mob Damage Per Kill', 'Mobs until Death', 'Clicks per Hour', 'Item Slots Needed']
+    const headers = ['Mob Lvl', 'Name', 'Gold Per Hour', 'Time To Kill(sec)', 'Hits Per Kill', 'Mob Damage Per Kill', 'Mobs until Death', 'Clicks per Hour', 'Item Slots Needed', 'Faction', 'Faction XP/Hr'];
     headers.forEach(header => {
         const th = document.createElement('th');
         th.textContent = header;
@@ -219,6 +239,10 @@ async function calculatesStuff(){
     sortedMobAndGold.forEach(sortedItem => {
         const row = document.createElement('tr');
         
+        const levelCell = document.createElement('td');
+        levelCell.textContent = sortedItem.lvl;
+        row.appendChild(levelCell);
+
         const nameCell = document.createElement('td');
         nameCell.textContent = sortedItem.name;
         row.appendChild(nameCell);
@@ -250,6 +274,16 @@ async function calculatesStuff(){
         const itemSlotsNeededCell = document.createElement('td');
         itemSlotsNeededCell.textContent = sortedItem['Item Slots Needed'];
         row.appendChild(itemSlotsNeededCell);
+
+        const factionNameCell = document.createElement('td');
+        factionNameCell.textContent = sortedItem['Faction'];
+        row.appendChild(factionNameCell);
+
+        const factionXpPrHrCell = document.createElement('td');
+        factionXpPrHrCell.textContent = sortedItem['Faction XP/Hr'];
+        row.appendChild(factionXpPrHrCell);
+
+        row.style.color = factionColors[sortedItem['Faction']] || 'white';
 
         tbody.appendChild(row);
     });

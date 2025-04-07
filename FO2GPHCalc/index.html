@@ -3,7 +3,8 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>FO2 Gold Calculator</title>
+        <title>FO2 Gold per Hour Calculator</title>
+            <link rel="icon" href="data:,">
         <style>
             body {
                 background-color: #333333;
@@ -48,16 +49,56 @@
                 display: grid;
             }
             table {
-                 width: 100%;
+                width: 100%;
                 border-collapse: collapse;
                 margin-top: 20px; /* Optional spacing for the table */
                 text-align: center;
             }
+            .collapsible { 
+                cursor: pointer;
+                padding: 18px;
+                width: 100%;
+                border: none;
+                text-align: left;
+                outline: none;
+                font-size: 15px;
+            }
 
+            .active,
+            .collapsible:hover {
+                background-color: #555;
+            }
+
+            .content {
+                padding: 0 18px;
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.2s ease-out;
+            }
         </style>
     </head>
     <body>
-        <h1>FO2 Calculator Thing I guess</h1>
+        <button class="collapsible">Short Explanation and How to Use/READ ME</button>
+        <div class="content">
+            <p>Hello! This is a calculator for FO2 that will tell you the (rough) expected Gold Per Hour of a mob. Here's a short explanation of how and what you need to input that isn't obvious:</p>
+
+            <p>The crit and dodge values should be as they are written in game. So dodge should be "13.49", and crit should be "48.39". No % signs. No 0.2349. The same goes for attack speed; 2.4, 3.0, etc.</p>
+
+            <p>"HP Regen" isn't really a value, and is something I'm still testing. Use whatever green number pops up above your head between mob fights. If you're using a self-healing buff, just set this to some random stupid value. The purpose of this variable was to get an idea of which mobs are more "afk"/brainless, and wouldn't need me to keep popping HP pots to stay alive, but I'm still not sure if I want it or not.</p>
+
+            <p>All stats used should be after buffing yourself, obviously.</p>
+
+            <p>GPH values are estimates. They assume a lot of unrealistic stuff - basically 0 downtime between clicking a new enemy after the previous one has died, no time spent going to the shop to sell the items, no time spent looting. Consider them "extreme upper bounds" and apply common sense; if a mob has an unrealistically high GPH but it's got something like 700 item slots needed, it's probably going to be worse than a mob with similar gph who needs only 300 slots, for example.</p>
+
+            <p>If you want a feature or have any questions, you can reach out to me on Discord or whatever. If this is out of date because new mobs have been added or you've found a bug, please also reach out to me. </p>
+
+            <p>If you are interested in how the calculation is being done, why I don't use DPS, random mathematical bullshit, and why this doesn't have skills in it yet, you can also contact me to ask. I might write a button or a page just for that later but I'm kinda lazy right now. Also, yes, I know it's ugly, I'll work on that later. Front-end is not my passion and the code is really messy since it was just a proof of concept. I'll work on it slowly.</p>
+
+            <p>Thanks for using this small project and happy grinding!</p>
+
+        </div>
+
+        <h1>FO2 GPH Calculator</h1>
         <div class="player-stats">
             <div>
                 <label for="Player Level">Player Level:</label>
@@ -101,7 +142,25 @@
         </div>
         <div id="response">
         </div>
+
         <script src="./main.js"></script>
+
+        <script>
+            var coll = document.getElementsByClassName("collapsible");
+            var i;
+
+            for (i = 0; i < coll.length; i++) {
+                coll[i].addEventListener("click", function () {
+                    this.classList.toggle("active");
+                    var content = this.nextElementSibling;
+                    if (content.style.maxHeight) {
+                        content.style.maxHeight = null;
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + "px";
+                    }
+                });
+            }
+        </script>
     </body>
 </html>
 
